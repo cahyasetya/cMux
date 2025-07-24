@@ -1,4 +1,17 @@
-.PHONY: help install install-dev lint format type-check test test-cov clean all
+# Define the source path of your retry_command.sh script
+# Using $(CURDIR) to get the absolute path of the Makefile's directory.
+RETRY_SCRIPT_SOURCE := $(CURDIR)/retry_command.sh
+
+# Define the target directory for the symbolic link
+# This is a common location for user executables, accessible system-wide.
+# NOTE: Creating/removing links here will require 'sudo make link'/'sudo make unlink'.
+# Assuming /usr/local/bin is always present.
+LINK_TARGET_DIR := /usr/local/bin
+
+# Define the name of the symbolic link (now without .sh extension)
+LINK_NAME := retry_command
+
+.PHONY: help install install-dev lint format type-check test test-cov clean all link unlink check dev-setup quick-check
 .DEFAULT_GOAL := help
 
 PYTHON := python3
@@ -42,7 +55,7 @@ test-cov: ## Run tests with coverage
 	@echo "Running pytest with coverage..."
 	pytest --cov=. --cov-report=html --cov-report=term
 
-clean: ## Clean up generated files
+clean: unlink ## Clean up generated files and the retry_command.sh link
 	@echo "Cleaning up..."
 	rm -rf build/
 	rm -rf dist/
@@ -64,3 +77,15 @@ dev-setup: install-dev ## Setup development environment
 	@echo "You can now run 'make all' to run all checks"
 
 quick-check: format lint ## Quick format and lint check
+
+# --- New targets for retry_command.sh link management ---
+link: ## Create a symbolic link to retry_command.sh in $(LINK_TARGET_DIR) and make it executable
+	@echo "Creating symbolic link for $(RETRY_SCRIPT_SOURCE) to $(LINK_TARGET_DIR)/$(LINK_NAME)..."
+	ln -sf $(RETRY_SCRIPT_SOURCE) $(LINK_TARGET_DIR)/$(LINK_NAME)
+	chmod +x $(LINK_TARGET_DIR)/$(LINK_NAME)
+	@echo "Link created and made executable: $(LINK_TARGET_DIR)/$(LINK_NAME)"
+
+unlink: ## Remove the symbolic link to retry_command.sh
+	@echo "Removing symbolic link $(LINK_TARGET_DIR)/$(LINK_NAME)..."
+	rm -f $(LINK_TARGET_DIR)/$(LINK_NAME)
+	@echo "Link removed."
